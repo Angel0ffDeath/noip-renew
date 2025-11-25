@@ -30,9 +30,11 @@ Install requirements: pip3 install requests beautifulsoup4 pyotp
    This will run the script daily at 2:05AM, but you can change the time.
    The script will read state file and if run date is in the future will exit. If run date is today script will logon to noip.com and check your hosts.
 
-   Remark: If your user cannot write in /var/log/, before running the script create log file:
-   sudo touch /var/log/noip-renew.log
-   sudo chown your_username:group_of_user /var/log/noip-renew.log
+Remark: If your user cannot write in /var/log/, before running the script create log file:
+
+sudo touch /var/log/noip-renew.log
+
+sudo chown your_username:group_of_user /var/log/noip-renew.log
 
 ## Known issues
 If you have more than one host to confirm and all host expire on the same day - script will work. If hosts expire on different days - sheduling logic should be improved.
