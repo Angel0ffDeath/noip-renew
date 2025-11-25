@@ -4,7 +4,8 @@
 
 Feel free to contribute!
 
-- Platform: Debian/Ubuntu/Raspbian/Arch Linux, no GUI needed ; python 3.7+
+- Platform: Debian/Ubuntu/Raspbian/Arch Linux, no GUI needed
+- Python 3.7+
 - Created: 25/11/2025
 
 ## Prerequisites
