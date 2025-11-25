@@ -17,15 +17,16 @@ Install requirements: pip3 install requests beautifulsoup4 pyotp
 
 1. Clone this repository to the device you will be running it from. (`git clone https://github.com/Angel0ffDeath/noip-renew.git`)
 2. Fill the information in credentials.txt
-3. Run script manually - python3 noip-renew.py.
-4. Create cron job:
+3. Run script manually - python3 noip-renew.py. Script will logon to noip and check your hosts. If nothing to confirm script will run after 3 days.
+   If host confirmed script will run after 25 days. Run date will be stored in file state.json in script directory.
+5. Create cron job:
    crontab -e
 
    Add at the end:
    5 2 * * * /usr/bin/python3 /home/your_username/noip-renew/noip-renew.py >> /var/log/noip-renew.log 2>&1
 
    This will run the script daily at 2:05AM, but you can change the time.
-   The script will decide wether to log to noip.com or will exit.
+   The script will read state file and if run date is in the future will exit. If run date is today script will logon to noip.com and check your hosts.
 
    Remark: If your user cannot write in /var/log/, before running the script create log file:
    sudo touch /var/log/noip-renew.log
