@@ -19,10 +19,12 @@ Install requirements: pip3 install requests beautifulsoup4 pyotp
 2. Fill the information in credentials.txt
 3. Run script manually - python3 noip-renew.py. Script will logon to noip and check your hosts. If nothing to confirm script will run after 3 days.
    If host confirmed script will run after 25 days. Run date will be stored in file state.json in script directory.
-5. Create cron job:
+5. Create cron job
+   
    crontab -e
 
    Add at the end:
+   
    5 2 * * * /usr/bin/python3 /home/your_username/noip-renew/noip-renew.py >> /var/log/noip-renew.log 2>&1
 
    This will run the script daily at 2:05AM, but you can change the time.
