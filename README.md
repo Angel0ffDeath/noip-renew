@@ -2,8 +2,7 @@
 
 [noip.com](https://www.noip.com/) free hosts expire every month.
 
-
-NOTE: this is an up-to-date fork of loblab/noip-renew repository as it seems it's not anymore actively developed, I'll try to keep this fork up to date and working as much as possible. Feel free to contribute!
+Feel free to contribute!
 
 - Platform: Debian/Ubuntu/Raspbian/Arch Linux, no GUI needed ; python 3.7+
 - Created: 25/11/2025
@@ -32,8 +31,8 @@ Install requirements: pip3 install requests beautifulsoup4 pyotp
    sudo touch /var/log/noip-renew.log
    sudo chown your_username:group_of_user /var/log/noip-renew.log
 
-   ## Known issues
-   If you have more than one host to confirm and all host expire on the same day - script will work. If hosts expire on different days - sheduling logic should be improved.
-   I have only 1 host and no way to test it.
+## Known issues
+If you have more than one host to confirm and all host expire on the same day - script will work. If hosts expire on different days - sheduling logic should be improved.
+I have only 1 host and no way to test it.
 
-   Enjoy
+Enjoy
