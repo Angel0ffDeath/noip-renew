@@ -12,33 +12,16 @@ Feel free to contribute!
 
 ENABLE 2FA authentication on your account and save the 2FA Secret key that is shared only once when you activate it
 
-Install requirements: pip3 install requests beautifulsoup4 pyotp
+## Requirements
+
+requests beautifulsoup4 pyotp - will be installed if missing during setup
 
 ## Usage
 
 1. Clone this repository to the device you will be running it from. (`git clone https://github.com/Angel0ffDeath/noip-renew.git`)
-2. Fill the information in credentials.txt
-3. Run script manually - python3 noip-renew.py. Script will logon to noip and check your hosts. If nothing to confirm script will run after 3 days.
-   If host confirmed script will run after 25 days. Run date will be stored in file state.json in script directory.
-5. Create cron job
-   
-   crontab -e
-
-   Add at the end:
-   
-   5 2 * * * /usr/bin/python3 /home/your_username/noip-renew/noip-renew.py >> /var/log/noip-renew.log 2>&1
-
-   This will run the script daily at 2:05AM, but you can change the time.
-   The script will read state file and if run date is in the future will exit. If run date is today script will logon to noip.com and check your hosts.
-
-Remark: If your user cannot write in /var/log/, before running the script create log file:
-
-sudo touch /var/log/noip-renew.log
-
-sudo chown your_username:group_of_user /var/log/noip-renew.log
+2. Run setup.sh
+3. Enjoy
 
 ## Known issues
 If you have more than one host to confirm and all host expire on the same day - script will work. If hosts expire on different days - sheduling logic should be improved.
 I have only 1 host and no way to test it.
-
-Enjoy
