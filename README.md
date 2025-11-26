@@ -21,7 +21,11 @@ requests beautifulsoup4 pyotp - will be installed, if missing, during setup
 1. Clone this repository to the device you will be running it from. (`git clone https://github.com/Angel0ffDeath/noip-renew.git`)
 2. Run setup.sh (ensure it is executable - chmod +x setup.sh)
 3. Enjoy
-4. Debug mode - run python3 /inst_dir/noip-renew.py -d or --debug - this will dump 2 factor html page and dns records html page
+4. Debug mode - run:
+
+    python3 /usr/local/sbin/noip-renew/noip-renew.py -d or --debug
+
+    This will dump 2 factor html page and dns records html page
 
 ## Known issues
 If you have more than one host to confirm, nevertheless they expire on the same day or different dates, schedule logic should work, but not tested.
