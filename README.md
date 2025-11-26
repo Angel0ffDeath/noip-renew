@@ -24,6 +24,6 @@ requests beautifulsoup4 pyotp - will be installed, if missing, during setup
 4. Debug mode - run python3 /inst_dir/noip-renew.py -d or --debug - this will dump 2 factor html page and dns records html page
 
 ## Known issues
-If you have more than one host to confirm and all host expire on the same day - script will work. If hosts expire on different days - sheduling logic should be improved.
+If you have more than one host to confirm nevertheless they expire on the same day or different dates, schedule logic should work, but not tested.
 
 I have only 1 host and no way to test it.
