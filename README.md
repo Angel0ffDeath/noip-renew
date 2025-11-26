@@ -14,7 +14,7 @@ ENABLE 2FA authentication on your account and save the 2FA Secret key that is sh
 
 ## Requirements
 
-requests beautifulsoup4 pyotp - will be installed if missing during setup
+requests beautifulsoup4 pyotp - will be installed, if missing, during setup
 
 ## Usage
 
@@ -24,4 +24,5 @@ requests beautifulsoup4 pyotp - will be installed if missing during setup
 
 ## Known issues
 If you have more than one host to confirm and all host expire on the same day - script will work. If hosts expire on different days - sheduling logic should be improved.
+
 I have only 1 host and no way to test it.
