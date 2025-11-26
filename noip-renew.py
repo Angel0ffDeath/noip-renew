@@ -31,6 +31,12 @@ import pyotp
 import requests
 from bs4 import BeautifulSoup
 
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-d", "--debug", action="store_true", help="Debug mode")
+ARGS = parser.parse_args()
+
 # ---------------------------------------------------------------------------
 # Paths / constants
 # ---------------------------------------------------------------------------
@@ -147,6 +153,10 @@ def save_state(next_run_date: date):
 
 
 def should_run_today():
+    if ARGS.debug:
+        logger.info("DEBUG MODE: Skipping date checks (always run).")
+        return True
+
     today = date.today()
     state = load_state()
     if not state or "next_run_date" not in state:
@@ -294,15 +304,14 @@ def do_twofactor(session: requests.Session, totp_secret: str, initial_response: 
         html = resp.text
 
     # --- DEBUG: Dump 2FA HTML page ---
-    """	
-    try:
-        dump_path = SCRIPT_DIR / "dump_2fa.html"
-        with dump_path.open("w", encoding="utf-8") as f:
-            f.write(html)
-        logger.info("Dumped 2FA HTML to %s", dump_path)
-    except Exception as e:
-        logger.warning("Failed to dump 2FA HTML: %s", e)
-    """		
+    if ARGS.debug:
+        try:
+            dump_path = SCRIPT_DIR / "dump_2fa.html"
+            with dump_path.open("w", encoding="utf-8") as f:
+                f.write(html)
+            logger.info("Dumped 2FA HTML to %s", dump_path)
+        except Exception as e:
+            logger.warning("Failed to dump 2FA HTML: %s", e)
     # --- END DEBUG ---
 
 
@@ -499,15 +508,14 @@ def main():
     html = r.text
 
     # --- DEBUG: Dump DNS records HTML page ---
-    """	
-    try:
-        dump_path = SCRIPT_DIR / "dump_dns_records.html"
-        with dump_path.open("w", encoding="utf-8") as f:
-            f.write(html)
-        logger.info("Dumped DNS records HTML to %s", dump_path)
-    except Exception as e:
-        logger.warning("Failed to dump DNS records HTML: %s", e)
-    """		
+    if ARGS.debug:
+        try:
+            dump_path = SCRIPT_DIR / "dump_dns_records.html"
+            with dump_path.open("w", encoding="utf-8") as f:
+                f.write(html)
+            logger.info("Dumped DNS records HTML to %s", dump_path)
+        except Exception as e:
+            logger.warning("Failed to dump DNS records HTML: %s", e)
     # --- END DEBUG ---
 
 
@@ -517,44 +525,30 @@ def main():
 
     hosts = parse_hosts_from_dns_page(html)
     if not hosts:
-        logger.info("No zone records found on page (no hosts?).")
-        # still schedule a short retry
-        next_run = date.today() + timedelta(days=NEXT_RUN_NO_ACTION)
-        logger.info(
-            "No hosts to process. Scheduling next run in %d days (on %s).",
-            NEXT_RUN_NO_ACTION,
-            next_run,
-        )
-        save_state(next_run)
+        if not ARGS.debug:
+            logger.info("No zone records found on page (no hosts?).")
+            # still schedule a short retry
+            next_run = date.today() + timedelta(days=NEXT_RUN_NO_ACTION)
+            logger.info(
+                "No hosts to process. Scheduling next run in %d days (on %s).",
+                NEXT_RUN_NO_ACTION,
+                next_run,
+            )
+            save_state(next_run)
+        else:
+            logger.info("DEBUG MODE: Not writing state.json")
         logger.info("Script finished OK.")
         return
 
     logger.info("Found %d host record(s).", len(hosts))
 
     # Decide which to confirm
-    any_has_days = any(h["days_left"] is not None for h in hosts)
-    hosts_to_confirm = []
+    hosts_to_confirm = [h for h in hosts if h["days_left"] is not None]
 
-    if any_has_days:
-        for h in hosts:
-            if h["days_left"] is not None:
-                hosts_to_confirm.append(h)
-        if hosts_to_confirm:
-            logger.info(
-                "%d host(s) need confirmation.",
-                len(hosts_to_confirm),
-            )
-        else:
-            logger.info(
-                "Nothing to renew now.",
-            )
+    if hosts_to_confirm:
+        logger.info("%d host(s) show expiration banners → confirming.", len(hosts_to_confirm))
     else:
-        # No explicit expiration info – safer to confirm everything
-        logger.info(
-            "No explicit 'Expires in X days' banners found. "
-            "Will confirm all hosts as a safety measure."
-        )
-        hosts_to_confirm = hosts
+        logger.info("No expiring hosts found → nothing to confirm.")
 
     confirmed_count = 0
 
@@ -570,24 +564,28 @@ def main():
         )
 
     # Scheduling
-    today = date.today()
-    if confirmed_count > 0:
-        next_run = today + timedelta(days=NEXT_RUN_AFTER_CONFIRM)
-        logger.info(
-            "Confirmed %d host(s). Scheduling next run in %d days (on %s).",
-            confirmed_count,
-            NEXT_RUN_AFTER_CONFIRM,
-            next_run,
-        )
-    else:
-        next_run = today + timedelta(days=NEXT_RUN_NO_ACTION)
-        logger.info(
-            "Nothing to renew → next run in %d days (on %s).",
-            NEXT_RUN_NO_ACTION,
-            next_run,
-        )
+    if not ARGS.debug:
+        today = date.today()
+        if confirmed_count > 0:
+            next_run = today + timedelta(days=NEXT_RUN_AFTER_CONFIRM)
+            logger.info(
+                "Confirmed %d host(s). Scheduling next run in %d days (on %s).",
+                confirmed_count,
+                NEXT_RUN_AFTER_CONFIRM,
+                next_run,
+            )
+        else:
+            next_run = today + timedelta(days=NEXT_RUN_NO_ACTION)
+            logger.info(
+                "Nothing to renew → next run in %d days (on %s).",
+                NEXT_RUN_NO_ACTION,
+                next_run,
+            )
 
-    save_state(next_run)
+        save_state(next_run)
+    else:
+        logger.info("DEBUG MODE: Not writing state.json")
+
     logger.info("Script finished OK.")
 
 
