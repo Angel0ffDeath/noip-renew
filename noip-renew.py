@@ -132,21 +132,24 @@ def load_credentials():
 
 def load_state():
     if not STATE_FILE.exists():
-        return None
+        return {"hosts": {}, "next_run_date": None}
+
     try:
         with STATE_FILE.open("r", encoding="utf-8") as f:
             data = json.load(f)
+        # Ensure structure
+        data.setdefault("hosts", {})
+        data.setdefault("next_run_date", None)
         return data
     except Exception as e:
         logger.warning("Could not read state file %s: %s", STATE_FILE, e)
-        return None
+        return {"hosts": {}, "next_run_date": None}
 
 
-def save_state(next_run_date: date):
-    data = {"next_run_date": next_run_date.strftime("%Y-%m-%d")}
+def save_state(state: dict):
     try:
         with STATE_FILE.open("w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+            json.dump(state, f, indent=2)
         logger.info("State saved to %s", STATE_FILE)
     except Exception as e:
         logger.warning("Failed to save state file %s: %s", STATE_FILE, e)
@@ -159,16 +162,10 @@ def should_run_today():
 
     today = date.today()
     state = load_state()
-    if not state or "next_run_date" not in state:
-        # No state yet → first run, so run now
+    nr = state.get("next_run_date")
+    if not nr:
         return True
-
-    try:
-        nr = state["next_run_date"]
-        next_run = date.fromisoformat(nr)
-    except Exception:
-        logger.warning("State file has invalid next_run_date, ignoring.")
-        return True
+    next_run = date.fromisoformat(nr)
 
     if today < next_run:
         logger.info(
@@ -552,6 +549,42 @@ def main():
 
     confirmed_count = 0
 
+    # Load previous state
+    state = load_state()
+    host_state = state.get("hosts", {})
+
+    today = date.today()
+
+    new_host_state = {}
+
+    for h in hosts:
+        fqdn = h["fqdn"]
+        old = host_state.get(fqdn, {})
+        old_date = old.get("next_run_date")
+
+        if h["days_left"] is not None:
+            # Host expiring → confirmed this run
+            run_date = (today + timedelta(days=NEXT_RUN_AFTER_CONFIRM)).strftime("%Y-%m-%d")
+        else:
+            # Host NOT expiring
+            if old_date:
+                # Keep old schedule
+                run_date = old_date
+            else:
+                # New host or never had schedule
+                run_date = (today + timedelta(days=NEXT_RUN_NO_ACTION)).strftime("%Y-%m-%d")
+
+        new_host_state[fqdn] = {"next_run_date": run_date}
+
+    # Compute global next_run_date
+    dates = [date.fromisoformat(new_host_state[h]["next_run_date"]) for h in new_host_state]
+    global_next = min(dates).strftime("%Y-%m-%d")
+
+    state = {
+        "next_run_date": global_next,
+        "hosts": new_host_state
+    }
+
     if hosts_to_confirm and csrf_token:
         for h in hosts_to_confirm:
             if not h["id"] or not h["fqdn"]:
@@ -565,24 +598,7 @@ def main():
 
     # Scheduling
     if not ARGS.debug:
-        today = date.today()
-        if confirmed_count > 0:
-            next_run = today + timedelta(days=NEXT_RUN_AFTER_CONFIRM)
-            logger.info(
-                "Confirmed %d host(s). Scheduling next run in %d days (on %s).",
-                confirmed_count,
-                NEXT_RUN_AFTER_CONFIRM,
-                next_run,
-            )
-        else:
-            next_run = today + timedelta(days=NEXT_RUN_NO_ACTION)
-            logger.info(
-                "Nothing to renew → next run in %d days (on %s).",
-                NEXT_RUN_NO_ACTION,
-                next_run,
-            )
-
-        save_state(next_run)
+        save_state(state)
     else:
         logger.info("DEBUG MODE: Not writing state.json")
 
