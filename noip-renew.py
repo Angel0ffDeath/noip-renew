@@ -41,7 +41,7 @@ ARGS = parser.parse_args()
 # Paths / constants
 # ---------------------------------------------------------------------------
 
-VERSION = "1.0"
+VERSION = "1.0.1"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 CREDENTIALS_FILE = SCRIPT_DIR / "credentials.txt"
@@ -560,14 +560,20 @@ def main():
     for h in hosts:
         fqdn = h["fqdn"]
         old = host_state.get(fqdn, {})
-        old_date = old.get("next_run_date")
+        old_date_str = old.get("next_run_date")
+		old_date = None
+		if old_date_str:
+            try:
+                old_date = date.fromisoformat(old_date_str)
+            except:
+                old_date = None
 
         if h["days_left"] is not None:
             # Host expiring → confirmed this run
             run_date = (today + timedelta(days=NEXT_RUN_AFTER_CONFIRM)).strftime("%Y-%m-%d")
         else:
             # Host NOT expiring
-            if old_date:
+            if old_date and old_date > today:
                 # Keep old schedule
                 run_date = old_date
             else:
