@@ -4,12 +4,13 @@ No-IP Free DDNS auto-confirm script (HTTP + 2FA, HTML parsing, AJAX confirm)
 
 Requirements:
   pip3 install requests beautifulsoup4 pyotp
+  (will be installed during setup if missing)
 
 Files:
-  /home/current_user/noip-renew/noip-renew.py        ← this script
-  /home/current_user/noip-renew/credentials.txt      ← credentials file (KEY=VALUE)
-  /home/current_user/noip-renew/state.json           ← created automatically
-  /var/log/noip-renew.log                            ← log file (must be writable)
+  noip-renew.py               ← this script
+  credentials.txt             ← credentials file (KEY=VALUE). Created automatically during setup.
+  state.json                  ← created automatically
+  /var/log/noip-renew.log     ← log file
 
 credentials.txt file content:
   NOIP_USER=your_user_name
@@ -49,7 +50,6 @@ TWOFA_URL = BASE_URL + "/2fa/verify"
 RECORDS_URL = MY_URL + "/dns/records"
 
 # Scheduling logic
-CONFIRM_THRESHOLD_DAYS = 7      # if "Expires in X days" and X <= this → confirm
 NEXT_RUN_AFTER_CONFIRM = 25     # days after a successful confirmation
 NEXT_RUN_NO_ACTION = 3          # days when nothing to renew / confirm
 
@@ -537,20 +537,16 @@ def main():
 
     if any_has_days:
         for h in hosts:
-            if h["days_left"] is None:
-                continue
-            if h["days_left"] <= CONFIRM_THRESHOLD_DAYS:
+            if h["days_left"] is not None:
                 hosts_to_confirm.append(h)
         if hosts_to_confirm:
             logger.info(
-                "%d host(s) need confirmation (<= %d days to expire).",
+                "%d host(s) need confirmation.",
                 len(hosts_to_confirm),
-                CONFIRM_THRESHOLD_DAYS,
             )
         else:
             logger.info(
-                "All hosts have more than %d days before expiration – nothing to renew now.",
-                CONFIRM_THRESHOLD_DAYS,
+                "Nothing to renew now.",
             )
     else:
         # No explicit expiration info – safer to confirm everything
