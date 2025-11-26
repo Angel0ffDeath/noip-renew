@@ -23,7 +23,7 @@ requests beautifulsoup4 pyotp - will be installed, if missing, during setup
 3. Enjoy
 4. Debug mode - run:
 
-    python3 /usr/local/sbin/noip-renew/noip-renew.py -d or --debug
+    python3 /usr/local/sbin/noip-renew/noip-renew.py -d (or --debug)
 
     This will dump 2 factor html page and dns records html page
 
