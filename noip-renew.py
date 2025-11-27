@@ -34,14 +34,15 @@ from bs4 import BeautifulSoup
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--debug", action="store_true", help="Debug mode")
+parser.add_argument("-d", "--debug", action="store_true", help="Debug mode. Dump html pages")
+parser.add_argument("-f", "--force", action="store_true", help="Force run even if not scheduled")
 ARGS = parser.parse_args()
 
 # ---------------------------------------------------------------------------
 # Paths / constants
 # ---------------------------------------------------------------------------
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 CREDENTIALS_FILE = SCRIPT_DIR / "credentials.txt"
@@ -160,6 +161,10 @@ def should_run_today():
         logger.info("DEBUG MODE: Skipping date checks (always run).")
         return True
 
+    if ARGS.force:
+        logger.info("FORCE MODE: Skipping date checks (always run).")
+        return True
+
     today = date.today()
     state = load_state()
     nr = state.get("next_run_date")
@@ -233,6 +238,18 @@ def login(session: requests.Session, user: str, password: str):
     logger.info("Opening login page...")
     r = session.get(LOGIN_URL, timeout=20)
     r.raise_for_status()
+    html = r.text
+
+    # --- DEBUG: Dump 2FA HTML page ---
+    if ARGS.debug:
+        try:
+            dump_path = SCRIPT_DIR / "login.html"
+            with dump_path.open("w", encoding="utf-8") as f:
+                f.write(html)
+            logger.info("Dumped Login HTML to %s", dump_path)
+        except Exception as e:
+            logger.warning("Failed to dump Login HTML: %s", e)
+    # --- END DEBUG ---
 
     token, payload = extract_login_form_token(r.text)
     if not token or payload is None:
@@ -482,7 +499,7 @@ def confirm_host(session: requests.Session, csrf_token: str, host_id: str, fqdn:
 
 def main():
     setup_logging()
-    logger.info("No-IP renew script ver. %s starting.", VERSION)
+    logger.info("No-IP Renew script version %s starting.", VERSION)
 
     if not should_run_today():
         return
@@ -531,7 +548,11 @@ def main():
                 NEXT_RUN_NO_ACTION,
                 next_run,
             )
-            save_state(next_run)
+            state = {
+                "next_run_date": next_run.strftime("%Y-%m-%d"),
+                "hosts": {}
+            }
+            save_state(state)
         else:
             logger.info("DEBUG MODE: Not writing state.json")
         logger.info("Script finished OK.")
@@ -561,12 +582,14 @@ def main():
         fqdn = h["fqdn"]
         old = host_state.get(fqdn, {})
         old_date_str = old.get("next_run_date")
-		old_date = None
-		if old_date_str:
+        old_date = None
+
+        if old_date_str:
             try:
                 old_date = date.fromisoformat(old_date_str)
             except:
                 old_date = None
+
 
         if h["days_left"] is not None:
             # Host expiring → confirmed this run
@@ -575,7 +598,7 @@ def main():
             # Host NOT expiring
             if old_date and old_date > today:
                 # Keep old schedule
-                run_date = old_date
+                run_date = old_date_str
             else:
                 # New host or never had schedule
                 run_date = (today + timedelta(days=NEXT_RUN_NO_ACTION)).strftime("%Y-%m-%d")
